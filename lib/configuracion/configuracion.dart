@@ -10,4 +10,15 @@ class MapaConfiguracion {
   ];
 
   static const Color colorOpcion = Color.fromARGB(255, 196, 215, 231);
+  static const Color colorLugar = Color.fromARGB(255, 46, 123, 185);
+  static const Color colorUbicacionActual = Color.fromARGB(255, 237, 82, 15);
+
+  static IconData obtenerIcono(String idCategoria) {
+    for (final cat in categorias) {
+      if (cat["id"] == idCategoria) {
+        return cat["icono"] as IconData;
+      }
+    }
+    return Icons.place; // icono por defecto
+  }
 }

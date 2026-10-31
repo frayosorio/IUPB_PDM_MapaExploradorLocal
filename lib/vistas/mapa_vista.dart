@@ -5,6 +5,10 @@ import '../configuracion/configuracion.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 
+import '../controladores/MarcadorControlador.dart';
+import '../modelos/Lugar.dart';
+import '../servicios/MapaServicio.dart';
+
 class MapaVista extends StatefulWidget {
   const MapaVista({super.key, required this.titulo});
 
@@ -20,8 +24,37 @@ class _MapaState extends State<MapaVista> {
   LatLng? _posicionActual;
   StreamSubscription<Position>? _secuenciaPosicionamiento;
   bool _mapaListo = false; // Bandera para saber si el mapa ya se renderizó
+  List<Marker> _marcadores = [];
+  final MarcadorControlador _controladorMarcador = MarcadorControlador();
 
-  Future<void> _buscarLugares() async {}
+  void _seleccionandoLugar(Lugar lugar) {}
+
+  Future<void> _buscarLugares() async {
+    if (_posicionActual == null) return;
+    try {
+      final lugares = await MapaServicio().buscarLugares(
+        posicion: _posicionActual!,
+        categoria: _categoriaSeleccionada,
+      );
+      setState(() {
+        _marcadores = [
+          _controladorMarcador.crearMarcadorUsuario(
+            _posicionActual!.latitude,
+            _posicionActual!.longitude,
+          ),
+          ...lugares.map(
+            (lugar) => _controladorMarcador.crearMarcadorLugar(
+              lugar,
+              MapaConfiguracion.obtenerIcono(_categoriaSeleccionada),
+              _seleccionandoLugar,
+            ),
+          ),
+        ];
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
 
   @override
   void initState() {
@@ -55,24 +88,25 @@ class _MapaState extends State<MapaVista> {
       distanceFilter: 50,
     );
 
-    _secuenciaPosicionamiento = Geolocator.getPositionStream(
-      locationSettings: especificacionesLocalizacion,
-    ).listen((Position posicion) {
-      final nuevaPosicion = LatLng(posicion.latitude, posicion.longitude);
-      setState(() {
-        _posicionActual = nuevaPosicion;
-        print("Nueva posición: $nuevaPosicion");
+    _secuenciaPosicionamiento =
+        Geolocator.getPositionStream(
+          locationSettings: especificacionesLocalizacion,
+        ).listen((Position posicion) {
+          final nuevaPosicion = LatLng(posicion.latitude, posicion.longitude);
+          setState(() {
+            _posicionActual = nuevaPosicion;
+            print("Nueva posición: $nuevaPosicion");
 
-        // Solo intentamos mover el mapa si ya sabemos que el widget FlutterMap fue creado
-        if (_mapaListo) {
-          try {
-            _controladorMapa.move(nuevaPosicion, 14);
-          } catch (e) {
-            print("Error al mover el mapa: $e");
-          }
-        }
-      });
-    });
+            // Solo intentamos mover el mapa si ya sabemos que el widget FlutterMap fue creado
+            if (_mapaListo) {
+              try {
+                _controladorMapa.move(nuevaPosicion, 14);
+              } catch (e) {
+                print("Error al mover el mapa: $e");
+              }
+            }
+          });
+        });
   }
 
   @override
@@ -115,65 +149,66 @@ class _MapaState extends State<MapaVista> {
         ],
       ),
       body: _posicionActual == null
-          ? const Center(
-        child: CircularProgressIndicator(),
-      )
+          ? const Center(child: CircularProgressIndicator())
           : Stack(
-        children: [
-          FlutterMap(
-            mapController: _controladorMapa,
-            options: MapOptions(
-              initialZoom: 14,
-              initialCenter: _posicionActual!,
-              onMapReady: () {
-                // Aquí marcamos que el mapa ya está listo y sincronizado con el controlador
-                setState(() {
-                  _mapaListo = true;
-                });
-              },
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-                userAgentPackageName: "com.curso_moviles.explorador_local",
-              ),
-            ],
-          ),
-          Positioned(
-            right: 10,
-            bottom: 30,
-            child: Column(
               children: [
-                FloatingActionButton(
-                  heroTag: "acercar",
-                  onPressed: () {
-                    if (_mapaListo) {
-                      _controladorMapa.move(
-                        _controladorMapa.camera.center,
-                        _controladorMapa.camera.zoom + 1,
-                      );
-                    }
-                  },
-                  child: const Icon(Icons.add),
+                FlutterMap(
+                  mapController: _controladorMapa,
+                  options: MapOptions(
+                    initialZoom: 14,
+                    initialCenter: _posicionActual!,
+                    onMapReady: () {
+                      // Aquí marcamos que el mapa ya está listo y sincronizado con el controlador
+                      setState(() {
+                        _mapaListo = true;
+                      });
+                    },
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      userAgentPackageName:
+                          "com.curso_moviles.explorador_local",
+                    ),
+                    MarkerLayer(markers: _marcadores)
+                  ],
                 ),
-                const SizedBox(height: 10),
-                FloatingActionButton(
-                  heroTag: 'alejar',
-                  onPressed: () {
-                    if (_mapaListo) {
-                      _controladorMapa.move(
-                        _controladorMapa.camera.center,
-                        _controladorMapa.camera.zoom - 1,
-                      );
-                    }
-                  },
-                  child: const Icon(Icons.remove),
+                Positioned(
+                  right: 10,
+                  bottom: 30,
+                  child: Column(
+                    children: [
+                      FloatingActionButton(
+                        heroTag: "acercar",
+                        onPressed: () {
+                          if (_mapaListo) {
+                            _controladorMapa.move(
+                              _controladorMapa.camera.center,
+                              _controladorMapa.camera.zoom + 1,
+                            );
+                          }
+                        },
+                        child: const Icon(Icons.add),
+                      ),
+                      const SizedBox(height: 10),
+                      FloatingActionButton(
+                        heroTag: 'alejar',
+                        onPressed: () {
+                          if (_mapaListo) {
+                            _controladorMapa.move(
+                              _controladorMapa.camera.center,
+                              _controladorMapa.camera.zoom - 1,
+                            );
+                          }
+                        },
+                        child: const Icon(Icons.remove),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

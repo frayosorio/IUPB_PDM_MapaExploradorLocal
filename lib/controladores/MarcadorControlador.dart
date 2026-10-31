@@ -1,0 +1,62 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../configuracion/configuracion.dart';
+import '../modelos/Lugar.dart';
+
+class MarcadorControlador {
+  Marker _construir({
+    required double latitud,
+    required double longitud,
+    required IconData icono,
+    required Color color,
+    required bool resaltar,
+    VoidCallback? evento,
+  }) {
+    return Marker(
+      point: LatLng(latitud, longitud),
+      width: 50,
+      height: 50,
+      child: GestureDetector(
+        onTap: evento,
+        child: Container(
+          decoration: resaltar
+              ? BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(blurRadius: 6, color: Colors.black26)],
+                )
+              : null,
+          child: Icon(icono, color: color, size: 35),
+        ),
+      ),
+    );
+  }
+
+
+  Marker crearMarcadorLugar(
+      Lugar lugar,
+      IconData icono,
+      Function(Lugar) seleccionandoLugar,
+      ) {
+    return _construir(
+      latitud: lugar.ubicacion.latitude,
+      longitud: lugar.ubicacion.longitude,
+      icono: icono,
+      color: MapaConfiguracion.colorLugar,
+      resaltar: false,
+      evento: () => seleccionandoLugar(lugar),
+    );
+  }
+
+  Marker crearMarcadorUsuario(double latitud, double longitud) {
+    return _construir(
+      latitud: latitud,
+      longitud: longitud,
+      icono: Icons.location_pin,
+      color: MapaConfiguracion.colorUbicacionActual,
+      resaltar: true,
+    );
+  }
+}
