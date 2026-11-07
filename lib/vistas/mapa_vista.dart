@@ -8,6 +8,7 @@ import 'dart:async';
 import '../controladores/MarcadorControlador.dart';
 import '../modelos/Lugar.dart';
 import '../servicios/MapaServicio.dart';
+import 'detalle_lugar_vista.dart';
 
 class MapaVista extends StatefulWidget {
   const MapaVista({super.key, required this.titulo});
@@ -27,7 +28,12 @@ class _MapaState extends State<MapaVista> {
   List<Marker> _marcadores = [];
   final MarcadorControlador _controladorMarcador = MarcadorControlador();
 
-  void _seleccionandoLugar(Lugar lugar) {}
+  void _seleccionandoLugar(Lugar lugarSeleccionado) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => DetalleLugarVista(lugar: lugarSeleccionado, iconos: MapaConfiguracion.getIconos()),
+    );
+  }
 
   Future<void> _buscarLugares() async {
     if (_posicionActual == null) return;
@@ -171,7 +177,7 @@ class _MapaState extends State<MapaVista> {
                       userAgentPackageName:
                           "com.curso_moviles.explorador_local",
                     ),
-                    MarkerLayer(markers: _marcadores)
+                    MarkerLayer(markers: _marcadores),
                   ],
                 ),
                 Positioned(

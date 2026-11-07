@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 
 class MapaConfiguracion {
   static const List<Map<String, dynamic>> categorias = [
@@ -20,5 +20,16 @@ class MapaConfiguracion {
       }
     }
     return Icons.place; // icono por defecto
+  }
+
+  static Map<String, IconData> getIconos() {
+    return Map.fromEntries(
+      categorias.map(
+            (categoria) => MapEntry(
+          categoria["id"] as String,
+          categoria["icono"] as IconData,
+        ),
+      ),
+    );
   }
 }
